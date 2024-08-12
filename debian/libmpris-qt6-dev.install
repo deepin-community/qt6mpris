@@ -1,0 +1,4 @@
+usr/include/*/qt6/*
+usr/lib/*/libmpris-qt6.so
+usr/lib/*/pkgconfig
+usr/lib/*/qt6/mkspecs
