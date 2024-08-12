@@ -1,0 +1,2 @@
+version=4
+https://git.sailfishos.org/mer-core/qtmpris/tags?sort=updated_desc archive/@ANY_VERSION@/qtmpris-\d\S*\.tar\.gz debian uupdate

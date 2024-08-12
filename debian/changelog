@@ -1,5 +1,5 @@
-template-repository (1.0-1) unstable; urgency=medium
+qt6mpris (1.0.0.1-1deepin1) unstable; urgency=medium
 
-  * Initial release
+  * Compatible with QT6
 
- -- Tsic404 <liuheng@deepin.org>  Sat, 28 Jan 2023 13:46:49 +0800
+ -- xiepengfei <xiepengfei@uniontech.com>  Fri, 09 Aug 2024 11:50:45 +0800
