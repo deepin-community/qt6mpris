@@ -1,0 +1,1130 @@
+From c9752ffc6dc727b45b3b9189eba1d0acf7e0db00 Mon Sep 17 00:00:00 2001
+From: Liu Zhangjian <liuzhangjian@uniontech.com>
+Date: Tue, 27 May 2025 13:42:32 +0800
+Subject: [PATCH] feat: Enhance logging in Mpris components
+
+Added detailed debug and warning messages across MprisController, MprisManager, MprisPlayer, and their adaptors to improve traceability and error handling. This includes initialization logs, property changes, and error conditions for better debugging and monitoring of the MPRIS interactions.
+
+Log: Enhance logging in Mpris components
+---
+ src/mpriscontroller.cpp      | 54 ++++++++++++++++++++----------------
+ src/mprismanager.cpp         | 38 +++++++++++++++++++++----
+ src/mprisplayer.cpp          | 39 ++++++++++++++++++--------
+ src/mprisplayeradaptor.cpp   | 51 +++++++++++++++++++++++++++++++---
+ src/mprisplayerinterface.cpp | 22 ++++++++++++---
+ src/mprisrootadaptor.cpp     | 15 ++++++++++
+ src/mprisrootinterface.cpp   | 15 +++++++---
+ 7 files changed, 182 insertions(+), 52 deletions(-)
+
+diff --git a/src/mpriscontroller.cpp b/src/mpriscontroller.cpp
+index ed16678..99751ce 100644
+--- a/src/mpriscontroller.cpp
++++ b/src/mpriscontroller.cpp
+@@ -42,6 +42,7 @@ MprisController::MprisController(const QString &service, const QDBusConnection &
+     , m_requestedPosition(false)
+     , m_canControlReceived(false)
+ {
++    qDebug() << "Initializing MprisController for service:" << service;
+     // Mpris Root Interface
+     connect(m_mprisRootInterface, &MprisRootInterface::asyncGetAllPropertiesFinished, this, &MprisController::onAsyncGetAllRootPropertiesFinished);
+     connect(m_mprisRootInterface, &MprisRootInterface::canQuitChanged, this, &MprisController::canQuitChanged);
+@@ -87,6 +88,7 @@ MprisController::~MprisController()
+ bool MprisController::isValid() const
+ {
+     if (!m_mprisRootInterface->isValid() || !m_mprisPlayerInterface->isValid()) {
++        qWarning() << "MprisController is invalid - interfaces not valid";
+         m_initedRootInterface = false;
+         m_initedPlayerInterface = false;
+         return false;
+@@ -95,18 +97,18 @@ bool MprisController::isValid() const
+     if (!m_initedRootInterface) {
+         m_mprisRootInterface->getAllProperties();
+         if (m_mprisRootInterface->lastExtendedError().isValid()) {
+-            qWarning() << Q_FUNC_INFO
+-                       << "Error" << m_mprisRootInterface->lastExtendedError().name()
+-                       << "happened:" << m_mprisRootInterface->lastExtendedError().message();
++            qWarning() << "Failed to get root interface properties:"
++                       << m_mprisRootInterface->lastExtendedError().name()
++                       << "-" << m_mprisRootInterface->lastExtendedError().message();
+         }
+     }
+ 
+     if (!m_initedPlayerInterface) {
+         m_mprisPlayerInterface->getAllProperties();
+         if (m_mprisPlayerInterface->lastExtendedError().isValid()) {
+-            qWarning() << Q_FUNC_INFO
+-                       << "Error" << m_mprisPlayerInterface->lastExtendedError().name()
+-                       << "happened:" << m_mprisPlayerInterface->lastExtendedError().message();
++            qWarning() << "Failed to get player interface properties:"
++                       << m_mprisPlayerInterface->lastExtendedError().name()
++                       << "-" << m_mprisPlayerInterface->lastExtendedError().message();
+         }
+     }
+ 
+@@ -117,10 +119,11 @@ bool MprisController::isValid() const
+ bool MprisController::quit()
+ {
+     if (!canQuit()) {
+-        qDebug() << Q_FUNC_INFO << "The method is not allowed";
++        qDebug() << "Quit operation not allowed";
+         return false;
+     }
+ 
++    qInfo() << "Attempting to quit media player";
+     QDBusPendingReply<> reply = m_mprisRootInterface->Quit();
+     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(reply, this);
+     QObject::connect(watcher, SIGNAL(finished(QDBusPendingCallWatcher*)),
+@@ -163,20 +166,21 @@ bool MprisController::next()
+ bool MprisController::openUri(const QUrl &uri)
+ {
+     if (!canControl()) {
+-        qDebug() << Q_FUNC_INFO << "The method is not allowed";
++        qDebug() << "OpenUri operation not allowed - no control";
+         return false;
+     }
+ 
+     if (!uri.isValid()) {
+-        qDebug() << Q_FUNC_INFO << "The uri is invalid";
++        qWarning() << "Invalid URI provided:" << uri.toString();
+         return false;
+     }
+ 
+     if (!m_mprisRootInterface->supportedUriSchemes().contains(uri.scheme())) {
+-        qDebug() << Q_FUNC_INFO << "The scheme is not supported";
++        qWarning() << "Unsupported URI scheme:" << uri.scheme();
+         return false;
+     }
+ 
++    qInfo() << "Opening URI:" << uri.toString();
+     QMimeDatabase db;
+     QMimeType mime;
+     if (uri.isLocalFile()) {
+@@ -294,13 +298,13 @@ bool MprisController::setPosition(qlonglong position)
+ bool MprisController::setPosition(const QString &aTrackId, qlonglong position)
+ {
+     if (!canSeek()) {
+-        qDebug() << Q_FUNC_INFO << "The method is not allowed";
++        qDebug() << "SetPosition operation not allowed - cannot seek";
+         return false;
+     }
+ 
+     QDBusObjectPath trackId(aTrackId);
+     if (trackId.path().isEmpty()) {
+-        qDebug() << Q_FUNC_INFO << "trackId doesn't map to a valid DBus object path";
++        qWarning() << "Invalid track ID provided:" << aTrackId;
+         return false;
+     }
+ 
+@@ -309,11 +313,12 @@ bool MprisController::setPosition(const QString &aTrackId, qlonglong position)
+         qlonglong reportedLength = length.toLongLong();
+ 
+         if (position < 0 || position > reportedLength) {
+-            qDebug() << Q_FUNC_INFO << "Unknown trackId in which to set the position";
++            qWarning() << "Invalid position:" << position << "for track length:" << reportedLength;
+             return false;
+         }
+     }
+ 
++    qInfo() << "Setting position to" << position << "for track:" << aTrackId;
+     QDBusPendingReply<> reply = m_mprisPlayerInterface->SetPosition(trackId, position);
+     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(reply, this);
+     QObject::connect(watcher, SIGNAL(finished(QDBusPendingCallWatcher*)),
+@@ -628,24 +633,26 @@ void MprisController::setVolume(double volume)
+ void MprisController::onAsyncGetAllRootPropertiesFinished()
+ {
+     if (m_mprisRootInterface->lastExtendedError().isValid()) {
+-        qWarning() << Q_FUNC_INFO
+-                   << "Error" << m_mprisRootInterface->lastExtendedError().name()
+-                   << "happened:" << m_mprisRootInterface->lastExtendedError().message();
++        qWarning() << "Failed to get root properties:"
++                   << m_mprisRootInterface->lastExtendedError().name()
++                   << "-" << m_mprisRootInterface->lastExtendedError().message();
+         return;
+     }
+ 
++    qInfo() << "Successfully initialized root interface";
+     m_initedRootInterface = true;
+ }
+ 
+ void MprisController::onAsyncGetAllPlayerPropertiesFinished()
+ {
+     if (m_mprisPlayerInterface->lastExtendedError().isValid()) {
+-        qWarning() << Q_FUNC_INFO
+-                   << "Error" << m_mprisPlayerInterface->lastExtendedError().name()
+-                   << "happened:" << m_mprisPlayerInterface->lastExtendedError().message();
++        qWarning() << "Failed to get player properties:"
++                   << m_mprisPlayerInterface->lastExtendedError().name()
++                   << "-" << m_mprisPlayerInterface->lastExtendedError().message();
+         return;
+     }
+ 
++    qInfo() << "Successfully initialized player interface";
+     m_initedPlayerInterface = true;
+ }
+ 
+@@ -656,13 +663,12 @@ void MprisController::onCanControlChanged()
+         // I could disconnect and re-connect the signals so I avoid
+         // double arriving signals but this really shouldn't happen
+         // ever.
++        qWarning() << "Unexpected CanControl value change detected";
+         Q_EMIT canGoNextChanged();
+         Q_EMIT canGoPreviousChanged();
+         Q_EMIT canPauseChanged();
+         Q_EMIT canPlayChanged();
+         Q_EMIT canSeekChanged();
+-        qWarning() << Q_FUNC_INFO
+-                   << "CanControl is not supposed to change its value!";
+         return;
+     }
+ 
+@@ -682,9 +688,9 @@ void MprisController::onFinishedPendingCall(QDBusPendingCallWatcher *call)
+ {
+     QDBusPendingReply<> reply = *call;
+     if (reply.isError()) {
+-        qWarning() << Q_FUNC_INFO
+-                   << "Error" << reply.error().name()
+-                   << "happened:" << reply.error().message();
++        qWarning() << "DBus call failed:"
++                   << reply.error().name()
++                   << "-" << reply.error().message();
+     }
+ 
+     call->deleteLater();
+diff --git a/src/mprismanager.cpp b/src/mprismanager.cpp
+index ffde4be..b193383 100644
+--- a/src/mprismanager.cpp
++++ b/src/mprismanager.cpp
+@@ -56,10 +56,11 @@ MprisManager::MprisManager(QObject *parent)
+     , m_singleService(false)
+     , m_playbackStatusMapper(new QSignalMapper(this))
+ {
++    qDebug() << "Initializing MprisManager";
+     QDBusConnection connection = getDBusConnection();
+ 
+     if (!connection.isConnected()) {
+-        qWarning() << "Mpris: Failed attempting to connect to DBus";
++        qWarning() << "Failed to connect to DBus";
+         return;
+     }
+ 
+@@ -68,6 +69,7 @@ MprisManager::MprisManager(QObject *parent)
+                        this, SLOT(onNameOwnerChanged(QString, QString, QString)));
+ 
+     QStringList serviceNames = connection.interface()->registeredServiceNames();
++    qDebug() << "Found" << serviceNames.size() << "registered services";
+     QStringList::const_iterator i = serviceNames.constBegin();
+     while (i != serviceNames.constEnd()) {
+ #if (QT_VERSION >= QT_VERSION_CHECK(5, 12, 0))
+@@ -188,14 +190,17 @@ void MprisManager::setCurrentService(const QString &service)
+     rx.setPatternSyntax(QRegExp::Wildcard);
+     if (!rx.exactMatch(service)) {
+ #endif
+-        qWarning() << "Mpris:" << service << "is not a proper Mpris2 service";
++        qWarning() << "Invalid MPRIS2 service:" << service;
+         return;
+     }
+ 
++    qInfo() << "Setting current service to:" << service;
+     QSharedPointer<MprisController> controller = availableController(service);
+     if (controller.isNull()) {
++        qDebug() << "Creating new controller for service:" << service;
+         controller = QSharedPointer<MprisController>(new MprisController(service, getDBusConnection(), this));
+     } else {
++        qDebug() << "Using existing controller for service:" << service;
+         m_availableControllers.move(m_availableControllers.indexOf(controller), 0);
+     }
+ 
+@@ -403,6 +408,8 @@ void MprisManager::onNameOwnerChanged(const QString &service, const QString &old
+         return;
+     }
+ 
++    qDebug() << "Service owner changed:" << service << "old:" << oldOwner << "new:" << newOwner;
++
+     if (oldOwner.isEmpty()) {
+         onServiceAppeared(service);
+         return;
+@@ -412,21 +419,23 @@ void MprisManager::onNameOwnerChanged(const QString &service, const QString &old
+         onServiceVanished(service);
+         return;
+     }
+-
+-    // Service changed owner. Nothing to do ...
+ }
+ 
+ void MprisManager::onServiceAppeared(const QString &service)
+ {
++    qInfo() << "Service appeared:" << service;
+     QSharedPointer<MprisController> controller = availableController(service);
+     if (!controller.isNull()) {
++        qDebug() << "Service already exists, updating controller";
+         Q_ASSERT(m_availableControllers.contains(controller));
+         m_availableControllers.removeOne(controller);
+         m_otherPlayingControllers.removeOne(controller);
+     } else {
+         if (!m_currentController.isNull() && service == m_currentController->service()) {
++            qDebug() << "Using current controller for service:" << service;
+             controller = m_currentController;
+         } else {
++            qDebug() << "Creating new controller for service:" << service;
+             controller = QSharedPointer<MprisController>(new MprisController(service, getDBusConnection(), this));
+         }
+ 
+@@ -436,6 +445,7 @@ void MprisManager::onServiceAppeared(const QString &service)
+     }
+ 
+     if (m_currentController.isNull()) {
++        qDebug() << "Setting as current controller (no current controller)";
+         setCurrentController(controller);
+     }
+ 
+@@ -447,11 +457,14 @@ void MprisManager::onServiceAppeared(const QString &service)
+ 
+     if (!m_singleService
+         && m_currentController->playbackStatus() != Mpris::Playing) {
++        qDebug() << "Setting as current controller (not single service and current not playing)";
+         m_availableControllers.prepend(controller);
+         setCurrentController(controller);
+     } else {
++        qDebug() << "Adding to available controllers";
+         m_availableControllers.insert(1, controller);
+         if (controller->playbackStatus() == Mpris::Playing) {
++            qDebug() << "Adding to other playing controllers";
+             m_otherPlayingControllers.prepend(controller);
+         }
+     }
+@@ -461,8 +474,10 @@ void MprisManager::onServiceAppeared(const QString &service)
+ 
+ void MprisManager::onServiceVanished(const QString &service)
+ {
++    qInfo() << "Service vanished:" << service;
+     QSharedPointer<MprisController> controller = availableController(service);
+     if (!controller.isNull()) {
++        qDebug() << "Removing controller from available and other playing lists";
+         Q_ASSERT(m_availableControllers.contains(controller));
+         m_availableControllers.removeOne(controller);
+         m_otherPlayingControllers.removeOne(controller);
+@@ -470,13 +485,16 @@ void MprisManager::onServiceVanished(const QString &service)
+ 
+     if (!m_currentController.isNull() && service == m_currentController->service()) {
+         if (m_singleService) {
++            qDebug() << "Single service mode, keeping current controller";
+             Q_EMIT availableServicesChanged();
+             return;
+         }
+ 
+         if (!m_availableControllers.isEmpty()) {
++            qDebug() << "Setting first available controller as current";
+             setCurrentController(m_availableControllers[0]);
+         } else {
++            qDebug() << "No available controllers, clearing current controller";
+             setCurrentController(QSharedPointer<MprisController>());
+         }
+     }
+@@ -486,29 +504,35 @@ void MprisManager::onServiceVanished(const QString &service)
+ 
+ void MprisManager::onAvailableControllerPlaybackStatusChanged(const QString &service)
+ {
++    qDebug() << "Playback status changed for service:" << service;
+     QSharedPointer<MprisController> controller = availableController(service);
+     Q_ASSERT(!controller.isNull());
+ 
+     if (m_currentController == controller) {
+         if (m_currentController->playbackStatus() == Mpris::Playing) {
++            qDebug() << "Current controller is playing, no action needed";
+             return;
+         }
+ 
+         if (!m_otherPlayingControllers.isEmpty()) {
++            qDebug() << "Switching to next playing controller";
+             QSharedPointer<MprisController> currentController = m_otherPlayingControllers.takeFirst();
+             m_availableControllers.move(m_availableControllers.indexOf(currentController), 0);
+             setCurrentController(currentController);
+         }
+     } else {
+         if (controller->playbackStatus() != Mpris::Playing) {
++            qDebug() << "Controller stopped playing, removing from other playing list";
+             m_otherPlayingControllers.removeOne(controller);
+             return;
+         }
+ 
+         if (!m_singleService
+             && m_currentController->playbackStatus() != Mpris::Playing) {
++            qDebug() << "Switching to playing controller (not single service mode)";
+             setCurrentController(controller);
+         } else {
++            qDebug() << "Adding to other playing controllers";
+             m_availableControllers.move(m_availableControllers.indexOf(controller), 1);
+             m_otherPlayingControllers.removeOne(controller); // Just in case, shouldn't be needed
+             m_otherPlayingControllers.prepend(controller);
+@@ -537,7 +561,10 @@ void MprisManager::setCurrentController(QSharedPointer<MprisController> controll
+         return;
+     }
+ 
++    qInfo() << "Setting current controller to:" << (controller.isNull() ? "null" : controller->service());
++
+     if (!m_currentController.isNull()) {
++        qDebug() << "Disconnecting signals from previous controller";
+         // Mpris Root Interface
+         disconnect(m_currentController.data(), &MprisController::canQuitChanged, this, &MprisManager::canQuitChanged);
+         disconnect(m_currentController.data(), &MprisController::canRaiseChanged, this, &MprisManager::canRaiseChanged);
+@@ -575,6 +602,7 @@ void MprisManager::setCurrentController(QSharedPointer<MprisController> controll
+     m_currentController = controller;
+ 
+     if (!m_currentController.isNull()) {
++        qDebug() << "Connecting signals to new controller";
+         // Mpris Root Interface
+         connect(m_currentController.data(), &MprisController::canQuitChanged, this, &MprisManager::canQuitChanged);
+         connect(m_currentController.data(), &MprisController::canRaiseChanged, this, &MprisManager::canRaiseChanged);
+@@ -614,7 +642,7 @@ void MprisManager::setCurrentController(QSharedPointer<MprisController> controll
+ bool MprisManager::checkController(const char *callerName) const
+ {
+     if (m_currentController.isNull()) {
+-        qWarning() << callerName << "None service available/selected";
++        qWarning() << "No service available/selected for operation:" << callerName;
+         return false;
+     }
+ 
+diff --git a/src/mprisplayer.cpp b/src/mprisplayer.cpp
+index 815e13f..3d80936 100644
+--- a/src/mprisplayer.cpp
++++ b/src/mprisplayer.cpp
+@@ -75,12 +75,15 @@ MprisPlayer::MprisPlayer(QObject *parent)
+     , m_shuffle(false)
+     , m_volume(0)
+ {
++    qDebug() << "Initializing MprisPlayer";
+     QDBusConnection connection = getDBusConnection();
+ 
+     if (!connection.isConnected()) {
+-        qWarning() << "Mpris: Failed attempting to connect to DBus";
++        qWarning() << "Failed to connect to DBus";
+     } else if (!connection.registerObject(mprisObjectPath, this)) {
+-        qWarning() << "Mpris: Failed attempting to register object path. Already registered?";
++        qWarning() << "Failed to register object path:" << mprisObjectPath << "- Already registered?";
++    } else {
++        qDebug() << "Successfully registered object path:" << mprisObjectPath;
+     }
+ }
+ 
+@@ -100,6 +103,7 @@ void MprisPlayer::setServiceName(const QString &serviceName)
+         return;
+     }
+ 
++    qInfo() << "Setting service name to:" << serviceName;
+     unregisterService();
+     m_serviceName = serviceName;
+     registerService();
+@@ -392,6 +396,7 @@ void MprisPlayer::setMetadata(const QVariantMap &metadata)
+         return;
+     }
+ 
++    qDebug() << "Metadata updated - track count:" << metadata.size();
+     m_metadata = metadata;
+     m_typedMetadata = typeMetadata(metadata);
+     Q_EMIT metadataChanged();
+@@ -423,6 +428,7 @@ void MprisPlayer::setPlaybackStatus(Mpris::PlaybackStatus playbackStatus)
+         return;
+     }
+ 
++    qInfo() << "Playback status changed from" << m_playbackStatus << "to" << playbackStatus;
+     m_playbackStatus = playbackStatus;
+     Q_EMIT playbackStatusChanged();
+ }
+@@ -438,6 +444,7 @@ void MprisPlayer::setPosition(qlonglong position)
+         return;
+     }
+ 
++    qDebug() << "Position changed from" << m_position << "to" << position;
+     m_position = position;
+     Q_EMIT positionChanged();
+ }
+@@ -483,6 +490,7 @@ void MprisPlayer::setVolume(double volume)
+         return;
+     }
+ 
++    qDebug() << "Volume changed from" << m_volume << "to" << volume;
+     m_volume = volume;
+     Q_EMIT volumeChanged();
+ }
+@@ -492,6 +500,7 @@ void MprisPlayer::setVolume(double volume)
+ 
+ QVariantMap MprisPlayer::typeMetadata(const QVariantMap &aMetadata)
+ {
++    qDebug() << "Converting metadata to DBus types";
+     QVariantMap metadata;
+     QVariantMap::const_iterator i = aMetadata.constBegin();
+     while (i != aMetadata.constEnd()) {
+@@ -553,29 +562,33 @@ QVariantMap MprisPlayer::typeMetadata(const QVariantMap &aMetadata)
+ void MprisPlayer::registerService()
+ {
+     if (m_serviceName.isEmpty()) {
+-        qWarning() << "Mpris: Failed to register service: empty service name";
++        qWarning() << "Failed to register service: empty service name";
+         return;
+     }
+ 
+     QDBusConnection connection = getDBusConnection();
+ 
+     if (!connection.isConnected()) {
+-        qWarning() << "Mpris: Failed attempting to connect to DBus";
++        qWarning() << "Failed to connect to DBus";
+         return;
+     }
+ 
+-    if (!connection.registerService(QString(serviceNamePrefix).append(m_serviceName))) {
+-        qWarning() << "Mpris: Failed attempting to register service: " << m_serviceName << " Already taken?";
++    QString fullServiceName = QString(serviceNamePrefix).append(m_serviceName);
++    qInfo() << "Registering service:" << fullServiceName;
++    if (!connection.registerService(fullServiceName)) {
++        qWarning() << "Failed to register service:" << fullServiceName << "- Already taken?";
++    } else {
++        qDebug() << "Successfully registered service:" << fullServiceName;
+     }
+-
+-    return;
+ }
+ 
+ void MprisPlayer::unregisterService()
+ {
+     if (!m_serviceName.isEmpty()) {
++        QString fullServiceName = QString(serviceNamePrefix).append(m_serviceName);
++        qInfo() << "Unregistering service:" << fullServiceName;
+         QDBusConnection connection = getDBusConnection();
+-        connection.unregisterService(QString(serviceNamePrefix).append(m_serviceName));
++        connection.unregisterService(fullServiceName);
+     }
+ }
+ 
+@@ -585,10 +598,14 @@ void MprisPlayer::notifyPropertiesChanged(const QString& interfaceName, const QV
+         return;
+     }
+ 
++    qDebug() << "Notifying property changes for interface:" << interfaceName 
++             << "- Changed:" << changedProperties.size() 
++             << "Invalidated:" << invalidatedProperties.size();
++
+     QDBusConnection connection = getDBusConnection();
+ 
+     if (!connection.isConnected()) {
+-        qWarning() << "Mpris: Failed attempting to connect to DBus";
++        qWarning() << "Failed to connect to DBus";
+         return;
+     }
+ 
+@@ -601,6 +618,6 @@ void MprisPlayer::notifyPropertiesChanged(const QString& interfaceName, const QV
+     message.setArguments(arguments);
+ 
+     if (!connection.send(message)) {
+-        qWarning() << "Mpris: Failed to send DBus property notification signal";
++        qWarning() << "Failed to send DBus property notification signal";
+     }
+ }
+diff --git a/src/mprisplayeradaptor.cpp b/src/mprisplayeradaptor.cpp
+index aceacea..ebb3289 100644
+--- a/src/mprisplayeradaptor.cpp
++++ b/src/mprisplayeradaptor.cpp
+@@ -46,6 +46,7 @@ static const QString mprisPlayerInterface = QStringLiteral("org.mpris.MediaPlaye
+ MprisPlayerAdaptor::MprisPlayerAdaptor(MprisPlayer *parent)
+     : QDBusAbstractAdaptor(parent)
+ {
++    qDebug() << "Initializing MprisPlayerAdaptor";
+     // constructor
+     setAutoRelaySignals(false);
+ 
+@@ -122,6 +123,7 @@ void MprisPlayerAdaptor::setLoopStatus(const QString &value)
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (player->canControl()) {
++        qDebug() << "Setting loop status to:" << value;
+         Q_EMIT player->loopStatusRequested(Mpris::enumerationFromString<Mpris::LoopStatus>(value));
+         return;
+     }
+@@ -175,6 +177,7 @@ void MprisPlayerAdaptor::setRate(double value)
+     }
+ 
+     if (errorMessage.isEmpty()) {
++        qDebug() << "Setting rate to:" << value;
+         if (value == 0) {
+             Q_EMIT player->pauseRequested();
+         } else {
+@@ -197,6 +200,7 @@ void MprisPlayerAdaptor::setShuffle(bool value)
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (player->canControl()) {
++        qDebug() << "Setting shuffle to:" << value;
+         Q_EMIT player->shuffleRequested(value);
+         return;
+     }
+@@ -215,7 +219,9 @@ void MprisPlayerAdaptor::setVolume(double value)
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (player->canControl()) {
+-        Q_EMIT player->volumeRequested(value < 0 ? 0 : value);
++        double adjustedValue = value < 0 ? 0 : value;
++        qDebug() << "Setting volume to:" << adjustedValue;
++        Q_EMIT player->volumeRequested(adjustedValue);
+         return;
+     }
+ 
+@@ -228,14 +234,17 @@ void MprisPlayerAdaptor::Next()
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (!player->canControl()) {
++        qWarning() << "Next operation not supported - control not available";
+         player->sendErrorReply(QDBusError::NotSupported, QStringLiteral("Wanted to move to next track but it is not supported."));
+         return;
+     }
+ 
+     if (!player->canGoNext()) {
++        qDebug() << "Next operation not available";
+         return;
+     }
+ 
++    qInfo() << "Requesting next track";
+     Q_EMIT player->nextRequested();
+ }
+ 
+@@ -243,19 +252,23 @@ void MprisPlayerAdaptor::OpenUri(const QString &Uri)
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (!player->canControl()) {
++        qWarning() << "OpenUri operation not supported - control not available";
+         player->sendErrorReply(QDBusError::NotSupported, QStringLiteral("Wanted to open an url but it is not supported."));
+         return;
+     }
+ 
+     QUrl url(Uri, QUrl::StrictMode);
+     if (!url.isValid()) {
++        qWarning() << "Invalid URI:" << Uri;
+         player->sendErrorReply(QDBusError::InvalidArgs, QStringLiteral("Wanted to open an url but the url is invalid."));
+     }
+ 
+     if (!player->supportedUriSchemes().contains(url.scheme())) {
++        qWarning() << "Unsupported URI scheme:" << url.scheme();
+         player->sendErrorReply(QDBusError::NotSupported, QStringLiteral("Wanted to open an url but the scheme is not supported."));
+     }
+ 
++    qDebug() << "Checking MIME type for URI:" << Uri;
+     QMimeDatabase db;
+     QMimeType mime;
+     if (url.isLocalFile()) {
+@@ -267,11 +280,13 @@ void MprisPlayerAdaptor::OpenUri(const QString &Uri)
+     mimeNames.prepend(mime.name());
+     for (int i = 0; i < mimeNames.size(); i++) {
+         if (player->supportedMimeTypes().contains(mimeNames[i])) {
++            qInfo() << "Opening URI:" << Uri << "with MIME type:" << mimeNames[i];
+             Q_EMIT player->openUriRequested(url);
+             return;
+         }
+     }
+ 
++    qWarning() << "Unsupported MIME type:" << mime.name();
+     player->sendErrorReply(QDBusError::NotSupported, QStringLiteral("Wanted to open an url but the mime type is not supported."));
+ }
+ 
+@@ -279,20 +294,25 @@ void MprisPlayerAdaptor::Pause()
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (!player->canControl()) {
++        qWarning() << "Pause operation not supported - control not available";
+         player->sendErrorReply(QDBusError::NotSupported, QStringLiteral("Wanted to pause but it is not supported."));
+         return;
+     }
+ 
+     if (!player->canPause()) {
++        qDebug() << "Pause operation not available";
+         return;
+     }
+ 
+     switch (player->playbackStatus()) {
+     case Mpris::Playing:
+     case Mpris::Stopped:
++        qInfo() << "Requesting pause";
+         Q_EMIT player->pauseRequested();
+         break;
+     case Mpris::Paused:
++        qDebug() << "Already paused";
++        break;
+     default:
+         // Nothing to do
+         break;
+@@ -303,20 +323,25 @@ void MprisPlayerAdaptor::Play()
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (!player->canControl()) {
++        qWarning() << "Play operation not supported - control not available";
+         player->sendErrorReply(QDBusError::NotSupported, QStringLiteral("Wanted to play but it is not supported."));
+         return;
+     }
+ 
+     if (!player->canPlay()) {
++        qDebug() << "Play operation not available";
+         return;
+     }
+ 
+     switch (player->playbackStatus()) {
+     case Mpris::Stopped:
+     case Mpris::Paused:
++        qInfo() << "Requesting play";
+         Q_EMIT player->playRequested();
+         break;
+     case Mpris::Playing:
++        qDebug() << "Already playing";
++        break;
+     default:
+         // Nothing to do
+         break;
+@@ -374,14 +399,17 @@ void MprisPlayerAdaptor::Seek(qlonglong Offset)
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (!player->canControl()) {
++        qWarning() << "Seek operation not supported - control not available";
+         player->sendErrorReply(QDBusError::NotSupported, QStringLiteral("Wanted to seek but it is not supported."));
+         return;
+     }
+ 
+     if (!player->canSeek() || Offset == 0) {
++        qDebug() << "Seek operation not available or offset is 0";
+         return;
+     }
+ 
++    qDebug() << "Seeking with offset:" << Offset;
+     if (Offset < 0) {
+         Q_EMIT player->seekRequested(Offset);
+         return;
+@@ -390,6 +418,7 @@ void MprisPlayerAdaptor::Seek(qlonglong Offset)
+     QVariantMap metadata = player->metadata();
+     QVariant length = metadata[Mpris::metadataToString(Mpris::Length)];
+     if (length.isValid() && (player->position() + Offset) > length.toLongLong()) {
++        qDebug() << "Seek beyond track length, requesting next track";
+         Q_EMIT player->nextRequested();
+         return;
+     }
+@@ -401,11 +430,13 @@ void MprisPlayerAdaptor::SetPosition(const QDBusObjectPath &TrackId, qlonglong P
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (!player->canControl()) {
++        qWarning() << "SetPosition operation not supported - control not available";
+         player->sendErrorReply(QDBusError::NotSupported, QStringLiteral("Wanted to move to position but it is not supported."));
+         return;
+     }
+ 
+     if (!player->canSeek()) {
++        qDebug() << "SetPosition operation not available - cannot seek";
+         return;
+     }
+ 
+@@ -413,19 +444,23 @@ void MprisPlayerAdaptor::SetPosition(const QDBusObjectPath &TrackId, qlonglong P
+     QVariant trackId = metadata[Mpris::metadataToString(Mpris::TrackId)];
+     QVariant length = metadata[Mpris::metadataToString(Mpris::Length)];
+     if (!trackId.isValid() || !length.isValid()) {
++        qWarning() << "Invalid track metadata - missing TrackId or Length";
+         return;
+     }
+ 
+     if (trackId.value<QDBusObjectPath>() != TrackId) {
++        qWarning() << "Invalid TrackId:" << TrackId.path() << "current:" << trackId.value<QDBusObjectPath>().path();
+         player->sendErrorReply(QDBusError::InvalidArgs, QStringLiteral("Wanted to move to position but the TrackId is not the current one."));
+         return;
+     }
+ 
+     if (Position > length.toLongLong()) {
++        qWarning() << "Position" << Position << "exceeds track length" << length.toLongLong();
+         player->sendErrorReply(QDBusError::InvalidArgs, QStringLiteral("Wanted to move to position but the position is off range."));
+         return;
+     }
+ 
++    qInfo() << "Setting position to" << Position << "for track" << TrackId.path();
+     Q_EMIT player->setPositionRequested(TrackId, Position);
+ }
+ 
+@@ -433,6 +468,7 @@ void MprisPlayerAdaptor::Stop()
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (!player->canControl()) {
++        qWarning() << "Stop operation not supported - control not available";
+         player->sendErrorReply(QDBusError::NotSupported, QStringLiteral("Wanted to stop but it is not supported."));
+         return;
+     }
+@@ -440,9 +476,12 @@ void MprisPlayerAdaptor::Stop()
+     switch (player->playbackStatus()) {
+     case Mpris::Playing:
+     case Mpris::Paused:
++        qInfo() << "Requesting stop";
+         Q_EMIT player->stopRequested();
+         break;
+     case Mpris::Stopped:
++        qDebug() << "Already stopped";
++        break;
+     default:
+         // Nothing to do
+         break;
+@@ -567,10 +606,11 @@ void MprisPlayerAdaptor::onMaximumRateChanged() const
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+ 
+     if (player->maximumRate() < 1) {
+-        qWarning() << "Mpris: Maximum rate should be equal or above 1";
++        qWarning() << "Maximum rate" << player->maximumRate() << "should be equal or above 1";
+         return;
+     }
+ 
++    qDebug() << "Maximum rate changed to:" << player->maximumRate();
+     QVariantMap changedProperties;
+     changedProperties[QStringLiteral("MaximumRate")] = QVariant(player->maximumRate());
+ 
+@@ -592,10 +632,11 @@ void MprisPlayerAdaptor::onMinimumRateChanged() const
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+ 
+     if (player->minimumRate() > 1) {
+-        qWarning() << "Mpris: Minimum rate should be equal or less than 1";
++        qWarning() << "Minimum rate" << player->minimumRate() << "should be equal or less than 1";
+         return;
+     }
+ 
++    qDebug() << "Minimum rate changed to:" << player->minimumRate();
+     QVariantMap changedProperties;
+     changedProperties[QStringLiteral("MinimumRate")] = QVariant(player->minimumRate() < 0 ? 0 : player->minimumRate());
+ 
+@@ -617,10 +658,12 @@ void MprisPlayerAdaptor::onRateChanged() const
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+ 
+     if (player->rate() <= 0 || player->rate() < player->minimumRate() || player->rate() > player->maximumRate()) {
+-        qWarning() << "Mpris: Rate should never be negative or out of the minimum and maximum limits";
++        qWarning() << "Invalid rate" << player->rate() << "- should be between" 
++                   << player->minimumRate() << "and" << player->maximumRate();
+         return;
+     }
+ 
++    qDebug() << "Rate changed to:" << player->rate();
+     QVariantMap changedProperties;
+     changedProperties[QStringLiteral("Rate")] = QVariant(player->rate());
+ 
+diff --git a/src/mprisplayerinterface.cpp b/src/mprisplayerinterface.cpp
+index 0a39403..e04141a 100644
+--- a/src/mprisplayerinterface.cpp
++++ b/src/mprisplayerinterface.cpp
+@@ -59,6 +59,7 @@ MprisPlayerInterface::MprisPlayerInterface(const QString &service, const QString
+     , m_shuffle(false)
+     , m_volume(0)
+ {
++    qDebug() << "Initializing MprisPlayerInterface for service:" << service << "path:" << path;
+     connect(this, SIGNAL(propertyChanged(QString, QVariant)), this, SLOT(onPropertyChanged(QString, QVariant)));
+ }
+ 
+@@ -71,97 +72,110 @@ void MprisPlayerInterface::onPropertyChanged(const QString &propertyName, const
+     if (propertyName == QStringLiteral("CanControl")) {
+         bool canControl = value.toBool();
+         if (m_canControl != canControl) {
++            qDebug() << "CanControl changed from" << m_canControl << "to" << canControl;
+             m_canControl = canControl;
+             Q_EMIT canControlChanged(m_canControl);
+         }
+     } else if (propertyName == QStringLiteral("CanGoNext")) {
+         bool canGoNext = value.toBool();
+         if (m_canGoNext != canGoNext) {
++            qDebug() << "CanGoNext changed from" << m_canGoNext << "to" << canGoNext;
+             m_canGoNext = canGoNext;
+             Q_EMIT canGoNextChanged(m_canGoNext);
+         }
+     } else if (propertyName == QStringLiteral("CanGoPrevious")) {
+         bool canGoPrevious = value.toBool();
+         if (m_canGoPrevious != canGoPrevious) {
++            qDebug() << "CanGoPrevious changed from" << m_canGoPrevious << "to" << canGoPrevious;
+             m_canGoPrevious = canGoPrevious;
+             Q_EMIT canGoPreviousChanged(m_canGoPrevious);
+         }
+     } else if (propertyName == QStringLiteral("CanPause")) {
+         bool canPause = value.toBool();
+         if (m_canPause != canPause) {
++            qDebug() << "CanPause changed from" << m_canPause << "to" << canPause;
+             m_canPause = canPause;
+             Q_EMIT canPauseChanged(m_canPause);
+         }
+     } else if (propertyName == QStringLiteral("CanPlay")) {
+         bool canPlay = value.toBool();
+         if (m_canPlay != canPlay) {
++            qDebug() << "CanPlay changed from" << m_canPlay << "to" << canPlay;
+             m_canPlay = canPlay;
+             Q_EMIT canPlayChanged(m_canPlay);
+         }
+     } else if (propertyName == QStringLiteral("CanSeek")) {
+         bool canSeek = value.toBool();
+         if (m_canSeek != canSeek) {
++            qDebug() << "CanSeek changed from" << m_canSeek << "to" << canSeek;
+             m_canSeek = canSeek;
+             Q_EMIT canSeekChanged(m_canSeek);
+         }
+     } else if (propertyName == QStringLiteral("LoopStatus")) {
+         QString loopStatus = value.toString();
+         if (m_loopStatus != loopStatus) {
++            qDebug() << "LoopStatus changed from" << m_loopStatus << "to" << loopStatus;
+             m_loopStatus = loopStatus;
+             Q_EMIT loopStatusChanged(m_loopStatus);
+         }
+     } else if (propertyName == QStringLiteral("MaximumRate")) {
+-        bool maximumRate = value.toDouble();
++        double maximumRate = value.toDouble();
+         if (m_maximumRate != maximumRate) {
++            qDebug() << "MaximumRate changed from" << m_maximumRate << "to" << maximumRate;
+             m_maximumRate = maximumRate;
+             Q_EMIT maximumRateChanged(m_maximumRate);
+         }
+     } else if (propertyName == QStringLiteral("Metadata")) {
+         QVariantMap metadata = value.toMap();
+         if (m_metadata != metadata) {
++            qDebug() << "Metadata updated - track count:" << metadata.size();
+             m_metadata = metadata;
+             Q_EMIT metadataChanged(m_metadata);
+         }
+     } else if (propertyName == QStringLiteral("MinimumRate")) {
+         double minimumRate = value.toDouble();
+         if (m_minimumRate != minimumRate) {
++            qDebug() << "MinimumRate changed from" << m_minimumRate << "to" << minimumRate;
+             m_minimumRate = minimumRate;
+             Q_EMIT minimumRateChanged(m_minimumRate);
+         }
+     } else if (propertyName == QStringLiteral("PlaybackStatus")) {
+         QString playbackStatus = value.toString();
+         if (m_playbackStatus != playbackStatus) {
++            qDebug() << "PlaybackStatus changed from" << m_playbackStatus << "to" << playbackStatus;
+             m_playbackStatus = playbackStatus;
+             Q_EMIT playbackStatusChanged(m_playbackStatus);
+         }
+     } else if (propertyName == QStringLiteral("Position")) {
+         qlonglong position = value.toLongLong();
+         if (m_position != position) {
++            qDebug() << "Position changed from" << m_position << "to" << position;
+             m_position = position;
+             Q_EMIT positionChanged(m_position);
+         }
+     } else if (propertyName == QStringLiteral("Rate")) {
+         double rate = value.toDouble();
+         if (m_rate != rate) {
++            qDebug() << "Rate changed from" << m_rate << "to" << rate;
+             m_rate = rate;
+             Q_EMIT rateChanged(m_rate);
+         }
+     } else if (propertyName == QStringLiteral("Shuffle")) {
+         bool shuffle = value.toBool();
+         if (m_shuffle != shuffle) {
++            qDebug() << "Shuffle changed from" << m_shuffle << "to" << shuffle;
+             m_shuffle = shuffle;
+             Q_EMIT shuffleChanged(m_shuffle);
+         }
+     } else if (propertyName == QStringLiteral("Volume")) {
+         double volume = value.toDouble();
+         if (m_volume != volume) {
++            qDebug() << "Volume changed from" << m_volume << "to" << volume;
+             m_volume = volume;
+             Q_EMIT volumeChanged(m_volume);
+         }
+     } else {
+-        qWarning() << Q_FUNC_INFO
+-                   << "Received PropertyChanged signal from unknown property: "
+-                   << propertyName;
++        qWarning() << "Received PropertyChanged signal for unknown property:" << propertyName;
+     }
+ }
+ 
+diff --git a/src/mprisrootadaptor.cpp b/src/mprisrootadaptor.cpp
+index 5f0fc9a..5dfb6c1 100644
+--- a/src/mprisrootadaptor.cpp
++++ b/src/mprisrootadaptor.cpp
+@@ -46,6 +46,7 @@ static const QString mprisRootInterface = QStringLiteral("org.mpris.MediaPlayer2
+ MprisRootAdaptor::MprisRootAdaptor(MprisPlayer *parent)
+     : QDBusAbstractAdaptor(parent)
+ {
++    qDebug() << "Initializing MprisRootAdaptor";
+     // constructor
+     setAutoRelaySignals(false);
+ 
+@@ -94,6 +95,7 @@ void MprisRootAdaptor::setFullscreen(bool value)
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (player->canSetFullscreen()) {
++        qDebug() << "Setting fullscreen to:" << value;
+         Q_EMIT player->fullscreenRequested(value);
+         return;
+     }
+@@ -131,10 +133,12 @@ void MprisRootAdaptor::Quit()
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (player->canQuit()) {
++        qInfo() << "Quit requested";
+         Q_EMIT player->quitRequested();
+         return;
+     }
+ 
++    qWarning() << "Quit operation not supported";
+     player->sendErrorReply(QDBusError::NotSupported, QStringLiteral("Quit requested but not supported."));
+ }
+ 
+@@ -142,10 +146,12 @@ void MprisRootAdaptor::Raise()
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
+     if (player->canRaise()) {
++        qInfo() << "Raise requested";
+         Q_EMIT player->raiseRequested();
+         return;
+     }
+ 
++    qWarning() << "Raise operation not supported";
+     player->sendErrorReply(QDBusError::NotSupported, QStringLiteral("Raise requested but not supported."));
+ }
+ 
+@@ -154,6 +160,7 @@ void MprisRootAdaptor::Raise()
+ void MprisRootAdaptor::onCanQuitChanged() const
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
++    qDebug() << "CanQuit changed to:" << player->canQuit();
+ 
+     QVariantMap changedProperties;
+     changedProperties[QStringLiteral("CanQuit")] = QVariant(player->canQuit());
+@@ -164,6 +171,7 @@ void MprisRootAdaptor::onCanQuitChanged() const
+ void MprisRootAdaptor::onCanRaiseChanged() const
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
++    qDebug() << "CanRaise changed to:" << player->canRaise();
+ 
+     QVariantMap changedProperties;
+     changedProperties[QStringLiteral("CanRaise")] = QVariant(player->canRaise());
+@@ -174,6 +182,7 @@ void MprisRootAdaptor::onCanRaiseChanged() const
+ void MprisRootAdaptor::onCanSetFullscreenChanged() const
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
++    qDebug() << "CanSetFullscreen changed to:" << player->canSetFullscreen();
+ 
+     QVariantMap changedProperties;
+     changedProperties[QStringLiteral("CanSetFullscreen")] = QVariant(player->canSetFullscreen());
+@@ -184,6 +193,7 @@ void MprisRootAdaptor::onCanSetFullscreenChanged() const
+ void MprisRootAdaptor::onDesktopEntryChanged() const
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
++    qDebug() << "DesktopEntry changed to:" << player->desktopEntry();
+ 
+     QVariantMap changedProperties;
+     changedProperties[QStringLiteral("DesktopEntry")] = QVariant(player->desktopEntry());
+@@ -194,6 +204,7 @@ void MprisRootAdaptor::onDesktopEntryChanged() const
+ void MprisRootAdaptor::onFullscreenChanged() const
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
++    qDebug() << "Fullscreen changed to:" << player->fullscreen();
+ 
+     QVariantMap changedProperties;
+     changedProperties[QStringLiteral("Fullscreen")] = QVariant(player->fullscreen());
+@@ -204,6 +215,7 @@ void MprisRootAdaptor::onFullscreenChanged() const
+ void MprisRootAdaptor::onHasTrackListChanged() const
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
++    qDebug() << "HasTrackList changed to:" << player->hasTrackList();
+ 
+     QVariantMap changedProperties;
+     changedProperties[QStringLiteral("HasTrackList")] = QVariant(player->hasTrackList());
+@@ -214,6 +226,7 @@ void MprisRootAdaptor::onHasTrackListChanged() const
+ void MprisRootAdaptor::onIdentityChanged() const
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
++    qDebug() << "Identity changed to:" << player->identity();
+ 
+     QVariantMap changedProperties;
+     changedProperties[QStringLiteral("Identity")] = QVariant(player->identity());
+@@ -224,6 +237,7 @@ void MprisRootAdaptor::onIdentityChanged() const
+ void MprisRootAdaptor::onSupportedUriSchemesChanged() const
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
++    qDebug() << "SupportedUriSchemes changed - count:" << player->supportedUriSchemes().size();
+ 
+     QVariantMap changedProperties;
+     changedProperties[QStringLiteral("SupportedUriSchemes")] = QVariant(player->supportedUriSchemes());
+@@ -234,6 +248,7 @@ void MprisRootAdaptor::onSupportedUriSchemesChanged() const
+ void MprisRootAdaptor::onSupportedMimeTypesChanged() const
+ {
+     MprisPlayer * const player = static_cast<MprisPlayer *>(parent());
++    qDebug() << "SupportedMimeTypes changed - count:" << player->supportedMimeTypes().size();
+ 
+     QVariantMap changedProperties;
+     changedProperties[QStringLiteral("SupportedMimeTypes")] = QVariant(player->supportedMimeTypes());
+diff --git a/src/mprisrootinterface.cpp b/src/mprisrootinterface.cpp
+index 95eeae0..c4263b4 100644
+--- a/src/mprisrootinterface.cpp
++++ b/src/mprisrootinterface.cpp
+@@ -40,6 +40,7 @@ MprisRootInterface::MprisRootInterface(const QString &service, const QString &pa
+     , m_fullscreen(false)
+     , m_hasTrackList(false)
+ {
++    qDebug() << "Initializing MprisRootInterface for service:" << service << "path:" << path;
+     connect(this, SIGNAL(propertyChanged(QString, QVariant)), this, SLOT(onPropertyChanged(QString, QVariant)));
+ }
+ 
+@@ -52,48 +53,56 @@ void MprisRootInterface::onPropertyChanged(const QString &propertyName, const QV
+     if (propertyName == QStringLiteral("CanQuit")) {
+         bool canQuit = value.toBool();
+         if (m_canQuit != canQuit) {
++            qDebug() << "CanQuit changed from" << m_canQuit << "to" << canQuit;
+             m_canQuit = canQuit;
+             Q_EMIT canQuitChanged(m_canQuit);
+         }
+     } else if (propertyName == QStringLiteral("CanRaise")) {
+         bool canRaise = value.toBool();
+         if (m_canRaise != canRaise) {
++            qDebug() << "CanRaise changed from" << m_canRaise << "to" << canRaise;
+             m_canRaise = canRaise;
+             Q_EMIT canRaiseChanged(m_canRaise);
+         }
+     } else if (propertyName == QStringLiteral("CanSetFullscreen")) {
+         bool canSetFullscreen = value.toBool();
+         if (m_canSetFullscreen != canSetFullscreen) {
++            qDebug() << "CanSetFullscreen changed from" << m_canSetFullscreen << "to" << canSetFullscreen;
+             m_canSetFullscreen = canSetFullscreen;
+             Q_EMIT canSetFullscreenChanged(m_canSetFullscreen);
+         }
+     } else if (propertyName == QStringLiteral("DesktopEntry")) {
+         QString desktopEntry = value.toString();
+         if (m_desktopEntry != desktopEntry) {
++            qDebug() << "DesktopEntry changed from" << m_desktopEntry << "to" << desktopEntry;
+             m_desktopEntry = desktopEntry;
+             Q_EMIT desktopEntryChanged(m_desktopEntry);
+         }
+     } else if (propertyName == QStringLiteral("Fullscreen")) {
+         bool fullscreen = value.toBool();
+         if (m_fullscreen != fullscreen) {
++            qDebug() << "Fullscreen changed from" << m_fullscreen << "to" << fullscreen;
+             m_fullscreen = fullscreen;
+             Q_EMIT fullscreenChanged(m_fullscreen);
+         }
+     } else if (propertyName == QStringLiteral("HasTrackList")) {
+         bool hasTrackList = value.toBool();
+         if (m_hasTrackList != hasTrackList) {
++            qDebug() << "HasTrackList changed from" << m_hasTrackList << "to" << hasTrackList;
+             m_hasTrackList = hasTrackList;
+             Q_EMIT hasTrackListChanged(m_hasTrackList);
+         }
+     } else if (propertyName == QStringLiteral("Identity")) {
+-        QString identity= value.toString();
++        QString identity = value.toString();
+         if (m_identity != identity) {
++            qDebug() << "Identity changed from" << m_identity << "to" << identity;
+             m_identity = identity;
+             Q_EMIT identityChanged(m_identity);
+         }
+     } else if (propertyName == QStringLiteral("SupportedMimeTypes")) {
+         QStringList supportedUriSchemes = value.toStringList();
+         if (m_supportedUriSchemes != supportedUriSchemes) {
++            qDebug() << "SupportedUriSchemes changed - count:" << supportedUriSchemes.size();
+             m_supportedUriSchemes = supportedUriSchemes;
+             Q_EMIT supportedMimeTypesChanged(m_supportedUriSchemes);
+         }
+@@ -104,9 +113,7 @@ void MprisRootInterface::onPropertyChanged(const QString &propertyName, const QV
+             Q_EMIT supportedUriSchemesChanged(m_supportedMimeTypes);
+         }
+     } else {
+-        qWarning() << Q_FUNC_INFO
+-                   << "Received PropertyChanged signal from unknown property: "
+-                   << propertyName;
++        qWarning() << "Received PropertyChanged signal for unknown property:" << propertyName;
+     }
+ }
+ 
+-- 
+2.47.2
+

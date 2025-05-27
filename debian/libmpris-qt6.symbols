@@ -1,7 +1,10 @@
 libmpris-qt6.so.1 libmpris-qt6 #MINVER#
- _Z13qvariant_castI5QListI7QStringEET_RK8QVariant@Base 1.0.0.1-1deepin1
- _Z13qvariant_castI7QStringET_RK8QVariant@Base 1.0.0.1-1deepin1
+ _Z13comparesEqualRK7QStringS1_@Base 1.0.0.1-1deepin2
+ _Z13qvariant_castI15QDBusObjectPathET_RK8QVariant@Base 1.0.0.1-1deepin2
+ _Z13qvariant_castI5QListI7QStringEET_O8QVariant@Base 1.0.0.1-1deepin2
  _Z41qRegisterNormalizedMetaTypeImplementationIP23QDBusPendingCallWatcherEiRK10QByteArray@Base 1.0.0.1-1deepin1
+#MISSING: 1.0.0.1-1deepin2# _Z13qvariant_castI5QListI7QStringEET_RK8QVariant@Base 1.0.0.1-1deepin1
+#MISSING: 1.0.0.1-1deepin2# _Z13qvariant_castI7QStringET_RK8QVariant@Base 1.0.0.1-1deepin1
  _ZN11MprisPlayer10setCanPlayEb@Base 1.0.0.1-1deepin1
  _ZN11MprisPlayer10setCanQuitEb@Base 1.0.0.1-1deepin1
  _ZN11MprisPlayer10setCanSeekEb@Base 1.0.0.1-1deepin1
@@ -210,6 +213,8 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZN17QArrayDataPointerI8QVariantE17reallocateAndGrowEN10QArrayData14GrowthPositionExPS1_@Base 1.0.0.1-1deepin1
  _ZN17QArrayDataPointerI8QVariantED1Ev@Base 1.0.0.1-1deepin1
  _ZN17QArrayDataPointerI8QVariantED2Ev@Base 1.0.0.1-1deepin1
+ _ZN17QArrayDataPointerIDsEC1ERKS0_@Base 1.0.0.1-1deepin2
+ _ZN17QArrayDataPointerIDsEC2ERKS0_@Base 1.0.0.1-1deepin2
  _ZN17QArrayDataPointerIDsED1Ev@Base 1.0.0.1-1deepin1
  _ZN17QArrayDataPointerIDsED2Ev@Base 1.0.0.1-1deepin1
  _ZN17QArrayDataPointerIcED1Ev@Base 1.0.0.1-1deepin1
@@ -274,10 +279,16 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZN20MprisPlayerInterface18minimumRateChangedEd@Base 1.0.0.1-1deepin1
  _ZN20MprisPlayerInterface20canGoPreviousChangedEb@Base 1.0.0.1-1deepin1
  _ZN20MprisPlayerInterface21playbackStatusChangedERK7QString@Base 1.0.0.1-1deepin1
+ _ZN20MprisPlayerInterface4NextEv@Base 1.0.0.1-1deepin2
+ _ZN20MprisPlayerInterface4PlayEv@Base 1.0.0.1-1deepin2
  _ZN20MprisPlayerInterface4SeekEx@Base 1.0.0.1-1deepin1
+ _ZN20MprisPlayerInterface4StopEv@Base 1.0.0.1-1deepin2
+ _ZN20MprisPlayerInterface5PauseEv@Base 1.0.0.1-1deepin2
  _ZN20MprisPlayerInterface6seekedEx@Base 1.0.0.1-1deepin1
  _ZN20MprisPlayerInterface7OpenUriERK7QString@Base 1.0.0.1-1deepin1
- _ZN20MprisPlayerInterface8metadataEv@Base 1.0.0.1-1deepin1
+ _ZN20MprisPlayerInterface8PreviousEv@Base 1.0.0.1-1deepin2
+#MISSING: 1.0.0.1-1deepin2# _ZN20MprisPlayerInterface8metadataEv@Base 1.0.0.1-1deepin1
+ _ZN20MprisPlayerInterface9PlayPauseEv@Base 1.0.0.1-1deepin2
  _ZN20MprisPlayerInterfaceC1ERK7QStringS2_RK15QDBusConnectionP7QObject@Base 1.0.0.1-1deepin1
  _ZN20MprisPlayerInterfaceC2ERK7QStringS2_RK15QDBusConnectionP7QObject@Base 1.0.0.1-1deepin1
  _ZN20MprisPlayerInterfaceD0Ev@Base 1.0.0.1-1deepin1
@@ -338,6 +349,9 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZN5MprisD2Ev@Base 1.0.0.1-1deepin1
  _ZN6QDebuglsEPKc@Base 1.0.0.1-1deepin1
  _ZN6QDebuglsERK7QString@Base 1.0.0.1-1deepin1
+ _ZN6QDebuglsEb@Base 1.0.0.1-1deepin2
+ _ZN6QDebuglsEd@Base 1.0.0.1-1deepin2
+ _ZN6QDebuglsEx@Base 1.0.0.1-1deepin2
  _ZN7QStringD1Ev@Base 1.0.0.1-1deepin1
  _ZN7QStringD2Ev@Base 1.0.0.1-1deepin1
  _ZN9QtPrivate16QMetaTypeForTypeI11MprisPlayerE4nameE@Base 1.0.0.1-1deepin1
@@ -406,6 +420,7 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZN9QtPrivate26QDataStreamOperatorForTypeIN5Mpris14PlaybackStatusELb1EE13dataStreamOutEPKNS_18QMetaTypeInterfaceER11QDataStreamPKv@Base 1.0.0.1-1deepin1
  _ZN9QtPrivate26QDataStreamOperatorForTypeIN5Mpris8MetadataELb1EE12dataStreamInEPKNS_18QMetaTypeInterfaceER11QDataStreamPv@Base 1.0.0.1-1deepin1
  _ZN9QtPrivate26QDataStreamOperatorForTypeIN5Mpris8MetadataELb1EE13dataStreamOutEPKNS_18QMetaTypeInterfaceER11QDataStreamPKv@Base 1.0.0.1-1deepin1
+ _ZN9QtPrivate27QDebugStreamOperatorForTypeI15QDBusObjectPathLb1EE11debugStreamEPKNS_18QMetaTypeInterfaceER6QDebugPKv@Base 1.0.0.1-1deepin2
  _ZN9QtPrivate27QDebugStreamOperatorForTypeIN5Mpris10LoopStatusELb1EE11debugStreamEPKNS_18QMetaTypeInterfaceER6QDebugPKv@Base 1.0.0.1-1deepin1
  _ZN9QtPrivate27QDebugStreamOperatorForTypeIN5Mpris14PlaybackStatusELb1EE11debugStreamEPKNS_18QMetaTypeInterfaceER6QDebugPKv@Base 1.0.0.1-1deepin1
  _ZN9QtPrivate30QExplicitlySharedDataPointerV2I8QMapDataISt3mapI7QString8QVariantSt4lessIS3_ESaISt4pairIKS3_S4_EEEEED1Ev@Base 1.0.0.1-1deepin1
@@ -637,3 +652,4 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZZN9QtPrivate16QMetaTypeForTypeI5MprisE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 1.0.0.1-1deepin1
  _ZZN9QtPrivate16QMetaTypeForTypeIP23QDBusPendingCallWatcherE17getLegacyRegisterEvENUlvE_4_FUNEv@Base 1.0.0.1-1deepin1
  _ZeqRK7QStringS1_@Base 1.0.0.1-1deepin1
+#MISSING: 1.0.0.1-1deepin2# _ZeqRK7QStringS1_@Base 1.0.0.1-1deepin1

@@ -1,3 +1,9 @@
+qt6mpris (1.0.0.1-1deepin2) unstable; urgency=medium
+
+  * Enhance logging in Mpris components
+
+ -- Liu Zhangjian <liuzhangjian@uniontech.com>  Tue, 27 May 2025 13:11:17 +0800
+
 qt6mpris (1.0.0.1-1deepin1) unstable; urgency=medium
 
   * Compatible with QT6
