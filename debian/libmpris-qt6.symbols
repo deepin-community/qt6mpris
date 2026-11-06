@@ -1,10 +1,12 @@
 libmpris-qt6.so.1 libmpris-qt6 #MINVER#
+ (optional)_Z13comparesEqualI7QString8QVariantLb1EEbRK4QMapIS0_S1_ES5_@Base 1.0.0.1-1deepin2
  _Z13comparesEqualRK7QStringS1_@Base 1.0.0.1-1deepin2
  _Z13qvariant_castI15QDBusObjectPathET_RK8QVariant@Base 1.0.0.1-1deepin2
- _Z13qvariant_castI5QListI7QStringEET_O8QVariant@Base 1.0.0.1-1deepin2
- _Z41qRegisterNormalizedMetaTypeImplementationIP23QDBusPendingCallWatcherEiRK10QByteArray@Base 1.0.0.1-1deepin1
-#MISSING: 1.0.0.1-1deepin2# _Z13qvariant_castI5QListI7QStringEET_RK8QVariant@Base 1.0.0.1-1deepin1
-#MISSING: 1.0.0.1-1deepin2# _Z13qvariant_castI7QStringET_RK8QVariant@Base 1.0.0.1-1deepin1
+ (optional)_Z13qvariant_castI5QListI7QStringEET_O8QVariant@Base 1.0.0.1-1deepin2
+ (optional)_Z13qvariant_castI5QListI7QStringEET_RK8QVariant@Base 1.0.0.1-1deepin2
+ (optional)_Z13qvariant_castI7QStringET_O8QVariant@Base 1.0.0.1-1deepin2
+ (optional)_Z13qvariant_castI7QStringET_RK8QVariant@Base 1.0.0.1-1deepin2
+ (optional)_Z41qRegisterNormalizedMetaTypeImplementationIP23QDBusPendingCallWatcherEiRK10QByteArray@Base 1.0.0.1-1deepin1
  _ZN11MprisPlayer10setCanPlayEb@Base 1.0.0.1-1deepin1
  _ZN11MprisPlayer10setCanQuitEb@Base 1.0.0.1-1deepin1
  _ZN11MprisPlayer10setCanSeekEb@Base 1.0.0.1-1deepin1
@@ -204,12 +206,15 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZN16MprisRootAdaptorD0Ev@Base 1.0.0.1-1deepin1
  _ZN16MprisRootAdaptorD1Ev@Base 1.0.0.1-1deepin1
  _ZN16MprisRootAdaptorD2Ev@Base 1.0.0.1-1deepin1
+ (optional)_ZN17QArrayDataPointerI14QSharedPointerI15MprisControllerEE12allocateGrowERKS3_xN10QArrayData14GrowthPositionE@Base 1.0.0.1-1deepin2
  _ZN17QArrayDataPointerI14QSharedPointerI15MprisControllerEE17reallocateAndGrowEN10QArrayData14GrowthPositionExPS3_@Base 1.0.0.1-1deepin1
  _ZN17QArrayDataPointerI14QSharedPointerI15MprisControllerEED1Ev@Base 1.0.0.1-1deepin1
  _ZN17QArrayDataPointerI14QSharedPointerI15MprisControllerEED2Ev@Base 1.0.0.1-1deepin1
+ (optional)_ZN17QArrayDataPointerI7QStringE12allocateGrowERKS1_xN10QArrayData14GrowthPositionE@Base 1.0.0.1-1deepin2
  _ZN17QArrayDataPointerI7QStringE17reallocateAndGrowEN10QArrayData14GrowthPositionExPS1_@Base 1.0.0.1-1deepin1
  _ZN17QArrayDataPointerI7QStringED1Ev@Base 1.0.0.1-1deepin1
  _ZN17QArrayDataPointerI7QStringED2Ev@Base 1.0.0.1-1deepin1
+ (optional)_ZN17QArrayDataPointerI8QVariantE12allocateGrowERKS1_xN10QArrayData14GrowthPositionE@Base 1.0.0.1-1deepin2
  _ZN17QArrayDataPointerI8QVariantE17reallocateAndGrowEN10QArrayData14GrowthPositionExPS1_@Base 1.0.0.1-1deepin1
  _ZN17QArrayDataPointerI8QVariantED1Ev@Base 1.0.0.1-1deepin1
  _ZN17QArrayDataPointerI8QVariantED2Ev@Base 1.0.0.1-1deepin1
@@ -287,7 +292,8 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZN20MprisPlayerInterface6seekedEx@Base 1.0.0.1-1deepin1
  _ZN20MprisPlayerInterface7OpenUriERK7QString@Base 1.0.0.1-1deepin1
  _ZN20MprisPlayerInterface8PreviousEv@Base 1.0.0.1-1deepin2
-#MISSING: 1.0.0.1-1deepin2# _ZN20MprisPlayerInterface8metadataEv@Base 1.0.0.1-1deepin1
+ (optional)_ZN20MprisPlayerInterface8metadataEv@Base 1.0.0.1-1deepin2
+ (optional)_ZN20MprisPlayerInterface8positionEv@Base 1.0.0.1-1deepin2
  _ZN20MprisPlayerInterface9PlayPauseEv@Base 1.0.0.1-1deepin2
  _ZN20MprisPlayerInterfaceC1ERK7QStringS2_RK15QDBusConnectionP7QObject@Base 1.0.0.1-1deepin1
  _ZN20MprisPlayerInterfaceC2ERK7QStringS2_RK15QDBusConnectionP7QObject@Base 1.0.0.1-1deepin1
@@ -327,6 +333,8 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZN30DBusExtendedPendingCallWatcherD0Ev@Base 1.0.0.1-1deepin1
  _ZN30DBusExtendedPendingCallWatcherD1Ev@Base 1.0.0.1-1deepin1
  _ZN30DBusExtendedPendingCallWatcherD2Ev@Base 1.0.0.1-1deepin1
+ (optional)_ZN4QMapI7QString8QVariantE22referenceHoldingDetachEv@Base 1.0.0.1-1deepin2
+ (optional)_ZN4QMapI7QString8QVariantE28referenceHoldingDetachExceptERKS0_@Base 1.0.0.1-1deepin2
  _ZN4QMapI7QString8QVariantE6insertERKS0_RKS1_@Base 1.0.0.1-1deepin1
  _ZN4QMapI7QString8QVariantEixERKS0_@Base 1.0.0.1-1deepin1
  _ZN5Mpris11qt_metacallEN11QMetaObject4CallEiPPv@Base 1.0.0.1-1deepin1
@@ -347,6 +355,7 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZN5MprisD0Ev@Base 1.0.0.1-1deepin1
  _ZN5MprisD1Ev@Base 1.0.0.1-1deepin1
  _ZN5MprisD2Ev@Base 1.0.0.1-1deepin1
+ (optional)_ZN5QListI14QSharedPointerI15MprisControllerEE5eraseENS3_14const_iteratorES4_@Base 1.0.0.1-1deepin2
  _ZN6QDebuglsEPKc@Base 1.0.0.1-1deepin1
  _ZN6QDebuglsERK7QString@Base 1.0.0.1-1deepin1
  _ZN6QDebuglsEb@Base 1.0.0.1-1deepin2
@@ -354,6 +363,7 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZN6QDebuglsEx@Base 1.0.0.1-1deepin2
  _ZN7QStringD1Ev@Base 1.0.0.1-1deepin1
  _ZN7QStringD2Ev@Base 1.0.0.1-1deepin1
+ (optional)_ZN8QMapDataISt3mapI7QString8QVariantSt4lessIS1_ESaISt4pairIKS1_S2_EEEE21copyIfNotEquivalentToERKS9_RS6_@Base 1.0.0.1-1deepin2
  _ZN9QtPrivate16QMetaTypeForTypeI11MprisPlayerE4nameE@Base 1.0.0.1-1deepin1
  _ZN9QtPrivate16QMetaTypeForTypeI12MprisManagerE4nameE@Base 1.0.0.1-1deepin1
  _ZN9QtPrivate16QMetaTypeForTypeI12QDBusVariantE4nameE@Base 1.0.0.1-1deepin1
@@ -543,6 +553,7 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZNK16MprisRootAdaptor8canRaiseEv@Base 1.0.0.1-1deepin1
  _ZNK16MprisRootAdaptor8identityEv@Base 1.0.0.1-1deepin1
  _ZNK17QDBusPendingReplyIJ4QMapI7QString8QVariantEEE10argumentAtILi0EEENS4_6SelectIXT_ES3_JEE4TypeEv@Base 1.0.0.1-1deepin1
+ (optional)_ZNK17QDBusPendingReplyIJ8QVariantEE10argumentAtILi0EEENS1_6SelectIXT_ES0_JEE4TypeEv@Base 1.0.0.1-1deepin2
  _ZNK18MprisPlayerAdaptor10canControlEv@Base 1.0.0.1-1deepin1
  _ZNK18MprisPlayerAdaptor10loopStatusEv@Base 1.0.0.1-1deepin1
  _ZNK18MprisPlayerAdaptor10metaObjectEv@Base 1.0.0.1-1deepin1
@@ -579,6 +590,7 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZNK29DBusExtendedAbstractInterface10metaObjectEv@Base 1.0.0.1-1deepin1
  _ZNK30DBusExtendedPendingCallWatcher10metaObjectEv@Base 1.0.0.1-1deepin1
  _ZNK5Mpris10metaObjectEv@Base 1.0.0.1-1deepin1
+ (optional)_ZNK7QString3argIS_Lb1EEES_RKT_i5QChar@Base 1.0.0.1-1deepin2
  _ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE16_M_insert_uniqueIS4_EES1_ISt17_Rb_tree_iteratorIS4_EbEOT_@Base 1.0.0.1-1deepin1
  _ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE24_M_get_insert_unique_posERS2_@Base 1.0.0.1-1deepin1
  _ZNSt8_Rb_treeI7QStringSt4pairIKS0_8QVariantESt10_Select1stIS4_ESt4lessIS0_ESaIS4_EE29_M_get_insert_hint_unique_posESt23_Rb_tree_const_iteratorIS4_ERS2_@Base 1.0.0.1-1deepin1
@@ -617,7 +629,7 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZZN11QMetaTypeIdI12QDBusVariantE14qt_metatype_idEvE11metatype_id@Base 1.0.0.1-1deepin1
  _ZZN11QMetaTypeIdI13QDBusArgumentE14qt_metatype_idEvE11metatype_id@Base 1.0.0.1-1deepin1
  _ZZN11QMetaTypeIdI15QDBusObjectPathE14qt_metatype_idEvE11metatype_id@Base 1.0.0.1-1deepin1
- _ZZN18QMetaTypeIdQObjectIP23QDBusPendingCallWatcherLi8EE14qt_metatype_idEvE11metatype_id@Base 1.0.0.1-1deepin1
+ (optional)_ZZN18QMetaTypeIdQObjectIP23QDBusPendingCallWatcherLi8EE14qt_metatype_idEvE11metatype_id@Base 1.0.0.1-1deepin1
  _ZZN9QtPrivate16QMetaTypeForTypeI11MprisPlayerE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 1.0.0.1-1deepin1
  _ZZN9QtPrivate16QMetaTypeForTypeI11MprisPlayerE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 1.0.0.1-1deepin1
  _ZZN9QtPrivate16QMetaTypeForTypeI12MprisManagerE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 1.0.0.1-1deepin1
@@ -650,6 +662,5 @@ libmpris-qt6.so.1 libmpris-qt6 #MINVER#
  _ZZN9QtPrivate16QMetaTypeForTypeI30DBusExtendedPendingCallWatcherE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 1.0.0.1-1deepin1
  _ZZN9QtPrivate16QMetaTypeForTypeI5MprisE13getDefaultCtrEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 1.0.0.1-1deepin1
  _ZZN9QtPrivate16QMetaTypeForTypeI5MprisE7getDtorEvENUlPKNS_18QMetaTypeInterfaceEPvE_4_FUNES5_S6_@Base 1.0.0.1-1deepin1
- _ZZN9QtPrivate16QMetaTypeForTypeIP23QDBusPendingCallWatcherE17getLegacyRegisterEvENUlvE_4_FUNEv@Base 1.0.0.1-1deepin1
- _ZeqRK7QStringS1_@Base 1.0.0.1-1deepin1
-#MISSING: 1.0.0.1-1deepin2# _ZeqRK7QStringS1_@Base 1.0.0.1-1deepin1
+ (optional)_ZZN9QtPrivate16QMetaTypeForTypeIP23QDBusPendingCallWatcherE17getLegacyRegisterEvENUlvE_4_FUNEv@Base 1.0.0.1-1deepin1
+ (optional)_ZeqRK7QStringS1_@Base 1.0.0.1-1deepin1
